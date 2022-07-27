@@ -18,7 +18,12 @@ void func(int sockfd)
         while ((buff[n++] = getchar()) != '\n')
             ;
         write(sockfd, buff, sizeof(buff));
+        if (strncmp("exit", buff, 4) == 0) {
+			printf("Client exiting...\n");
+			break;
+		}
         bzero(buff, sizeof(buff));
+        
     }
 }
    
