@@ -17,20 +17,21 @@ int func(int connfd){
     
     char buffer[MAX];
     int n;
+	int test;
 
     while (1) {
         bzero(buffer, MAX);
 
-        read(connfd, buffer, sizeof(buffer));
-
-		if(!strncmp(buffer, "", 1)){
+        ssize_t num = recv(connfd, buffer, sizeof(buffer), 0);
+		if (num != 0){
+			printf("%d\n",num);
+		}
 			printf("received message %s", buffer);
 			if (strncmp(buffer, "exit", 4) == 0){
 				fclose(fp);
 				return 0;
 			}
         	fprintf(fp, "%s\n", buffer);
-		}
     }
 }
 
