@@ -6,16 +6,17 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
-#include <pthread.h>
 
 #define PORT 8080
 #define SA struct sockaddr
+
+int sockfd;
 
 static void sendMessage (GtkWidget *widget, gpointer data){
     GtkEntryBuffer *buffer = gtk_entry_get_buffer(data);
     const char *text = gtk_entry_buffer_get_text(buffer);
 
-    printf("%s\n", text);
+    write(sockfd, text, sizeof(text));
 }
 
 static void activate (GtkApplication *app, gpointer user_data) {
@@ -31,7 +32,7 @@ static void activate (GtkApplication *app, gpointer user_data) {
     GObject *entry = gtk_builder_get_object(builder, "text");
 
     GObject *button = gtk_builder_get_object (builder, "button1");
-    g_signal_connect (button, "clicked", G_CALLBACK (send), entry);
+    g_signal_connect (button, "clicked", G_CALLBACK (sendMessage), entry);
 
     gtk_widget_show (GTK_WIDGET (window));
 
@@ -73,10 +74,8 @@ int main (int argc, char *argv[]){
 #ifdef GTK_SRCDIR
     g_chdir (GTK_SRCDIR);
 #endif
-    
-    pthread_t tid;
 
-    int sockfd = createSocket();
+    sockfd = createSocket();
 
 
     
@@ -84,7 +83,6 @@ int main (int argc, char *argv[]){
     g_signal_connect (app, "activate", G_CALLBACK(activate), NULL);
 
     int status = g_application_run (G_APPLICATION(app), argc, argv);
-    
 
     g_object_unref (app);
 
