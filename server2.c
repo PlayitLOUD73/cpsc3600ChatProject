@@ -23,21 +23,19 @@ int func(int connfd){
 
         read(connfd, buffer, sizeof(buffer));
 
-        printf("received message %s", buffer);
-        if (strncmp(buffer, "exit", 4) == 0){
-            fclose(fp);
-            return 0;
-        }
-        fprintf(fp, "%s\n", buffer);
+		if(!strncmp(buffer, "", 1)){
+			printf("received message %s", buffer);
+			if (strncmp(buffer, "exit", 4) == 0){
+				fclose(fp);
+				return 0;
+			}
+        	fprintf(fp, "%s\n", buffer);
+		}
     }
-
-
 }
 
 
 int main(){
-
-    
 
     fp = fopen("test.txt", "a+");
 
