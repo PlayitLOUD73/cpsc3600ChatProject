@@ -11,7 +11,7 @@
 #define SA struct sockaddr
 #define MAX_SIZE 80
 
-int func(int connfd, FILE* fp){
+int func(int connfd){
     
     char buffer[MAX_SIZE];
 	int test;
@@ -23,16 +23,16 @@ int func(int connfd, FILE* fp){
 
 		// if buffer isn't empty or an error occurred
 		if (num != 0 && num != -1){
-			printf("Message Size: %d\n",num);
-			printf("Received Message: %s\n", buffer);
+   			printf("Size Received: %d\n", num);
+    		printf("Message Recieved: %s\n", buffer);
 			
-			if (strncmp(buffer, "exit", 4) == 0){
-				fclose(fp);
+			if (strncmp(buffer, "exit", 4) == 0)
 				return 0;
-			}
 			
 			// write message to file
+			FILE* fp = fopen("test.txt", "a");
         	fprintf(fp, "%s\n", buffer);
+			fclose(fp);
 		}
     }
 }
@@ -40,7 +40,6 @@ int func(int connfd, FILE* fp){
 
 int main(){
 
-    FILE* fp = fopen("test.txt", "a+");
 
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
@@ -84,7 +83,7 @@ int main(){
 		printf("server accept the client...\n");
 
 	// Function for chatting between client and server
-	func(connfd, fp);
+	func(connfd);
 
 	// After chatting close the socket
 	close(sockfd);

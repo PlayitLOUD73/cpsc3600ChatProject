@@ -15,6 +15,7 @@ int sockfd;
 
 static void sendMessage (GtkWidget *widget, gpointer data){
     // converts the callback data to a useable format
+    // from: https://stackoverflow.com/questions/3225302/get-text-from-a-gtkentry 
     GtkWidget *entry = gtk_entry_new();
     entry = (GtkWidget*) data;
 
@@ -23,13 +24,12 @@ static void sendMessage (GtkWidget *widget, gpointer data){
     const char *text = gtk_entry_buffer_get_text(buffer);
 
     // sends the message to the server
-    ssize_t n = send(sockfd, text, sizeof(text), 0);
+    ssize_t n = send(sockfd, text, strlen(text), 0);
     printf("Size Sent: %d\n", n);
     printf("Message: %s\n", text);
 }
 
 static void activate (GtkApplication *app, gpointer user_data) {
-
 
     GtkBuilder *builder = gtk_builder_new ();
     gtk_builder_add_from_file (builder, "builder.ui", NULL);
@@ -83,16 +83,15 @@ int main (int argc, char *argv[]){
 #ifdef GTK_SRCDIR
     g_chdir (GTK_SRCDIR);
 #endif
-
+    // connects socket to server
     sockfd = createSocket();
 
-
-    
+    // sets up data for ui
     GtkApplication *app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
     g_signal_connect (app, "activate", G_CALLBACK(activate), NULL);
 
+    // runs ui, then exits
     int status = g_application_run (G_APPLICATION(app), argc, argv);
-
     g_object_unref (app);
 
     return status;
