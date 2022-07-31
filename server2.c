@@ -11,10 +11,11 @@
 #define SA struct sockaddr
 #define MAX_SIZE 80
 
+int port;
+
 int func(int connfd){
     
     char buffer[MAX_SIZE];
-	int test;
 
     while (1) {
 		// clears the buffer and reads from socket again
@@ -23,7 +24,7 @@ int func(int connfd){
 
 		// if buffer isn't empty or an error occurred
 		if (num != 0 && num != -1){
-   			printf("Size Received: %d\n", num);
+   			printf("Size Received: %ld\n", num);
     		printf("Message Recieved: %s\n", buffer);
 			
 			if (strncmp(buffer, "exit", 4) == 0)
@@ -37,12 +38,60 @@ int func(int connfd){
     }
 }
 
+int createSocket(){
+	
+	int sockfd, connfd, len;
+	struct sockaddr_in servaddr, cli;
+	
+	sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
-int main(){
+    if (sockfd == -1) {
+        printf("socket creation failed...\n");
+    } else {
+        printf("Socket created\n");
+    }
 
+    servaddr.sin_family = AF_INET;
+	servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+	servaddr.sin_port = htons(port);
 
-    int sockfd, connfd, len;
-    struct sockaddr_in servaddr, cli;
+    // Binding newly created socket to given IP and verification
+	if ((bind(sockfd, (SA*)&servaddr, sizeof(servaddr))) != 0) {
+		printf("socket bind failed...\n");
+		exit(0);
+	}
+	else
+		printf("Socket successfully binded..\n");
+
+    // Now server is ready to listen and verification
+	if ((listen(sockfd, 5)) != 0) {
+		printf("Listen failed...\n");
+		exit(0);
+	}
+	else
+		printf("Server listening..\n");
+
+	len = sizeof(cli);
+
+	connfd = accept(sockfd, (SA*)&cli, &len);
+	if (connfd < 0) {
+		printf("server accept failed...\n");
+		exit(0);
+	}
+	else
+		printf("server accept the client...\n");
+	
+
+	func(connfd);
+
+	return 0;
+}
+
+void listenerSocketCreate() {
+	int sockfd, len;
+	struct sockaddr_in servaddr, cli;
+
+	port = PORT;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -73,7 +122,14 @@ int main(){
 		printf("Server listening..\n");
 	len = sizeof(cli);
 
-    // Accept the data packet from client and verification
+	listener(sockfd, len, cli);
+}
+
+void listener(int sockfd, int len, struct sockaddr_in cli){
+
+	char sport[5];
+	int connfd;
+	// Accept the data packet from client and verification
 	connfd = accept(sockfd, (SA*)&cli, &len);
 	if (connfd < 0) {
 		printf("server accept failed...\n");
@@ -82,9 +138,30 @@ int main(){
 	else
 		printf("server accept the client...\n");
 
+	sprintf(sport, "%d", ++port);
+
+	if (fork() == 0){
+		createSocket();
+		return 0;
+	}
+
+	sleep(1);
+
+	send(connfd, sport, strlen(sport), 0);
+	fclose(sockfd);
+	listenerSocketCreate();
+
+}
+
+int main(){
+
+	listenerSocketCreate();
+
+
 	// Function for chatting between client and server
-	func(connfd);
+	//func(connfd);
 
 	// After chatting close the socket
-	close(sockfd);
+
+	return 0;
 }

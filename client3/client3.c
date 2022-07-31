@@ -48,9 +48,10 @@ static void activate (GtkApplication *app, gpointer user_data) {
     g_object_unref (builder);
 }
 
-int createSocket(){
+int createSocket(int portNum){
     int sockfd, connfd;
     struct sockaddr_in servaddr, cli;
+    char* newSocket = malloc(sizeof(char) * 10);
    
     // socket create and verification
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -64,27 +65,38 @@ int createSocket(){
    
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_addr.s_addr = inet_addr("159.223.187.217");
+    servaddr.sin_port = htons(portNum);
    
     // connect the client socket to server socket
     if (connect(sockfd, (SA*)&servaddr, sizeof(servaddr)) != 0) {
         printf("connection with the server failed...\n");
         exit(0);
     }
-    else
+    else{
         printf("connected to the server..\n");
+        // rebinds to a different server port to allow server to have multiple connections
+        if(portNum == PORT){
+            ssize_t num = recv(sockfd, newSocket, sizeof(newSocket), 0);
+            if(num == 0 || num == -1){
+                printf("socket rebind failed\n");
+                exit(0);
+            }
+            close(sockfd);
+            createSocket(atoi(newSocket));
+        }
+    }
 
     return sockfd;
 }
 
 
 int main (int argc, char *argv[]){
-#ifdef GTK_SRCDIR
-    g_chdir (GTK_SRCDIR);
-#endif
+    #ifdef GTK_SRCDIR
+        g_chdir (GTK_SRCDIR);
+    #endif
     // connects socket to server
-    sockfd = createSocket();
+    sockfd = createSocket(PORT);
 
     // sets up data for ui
     GtkApplication *app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
@@ -93,6 +105,7 @@ int main (int argc, char *argv[]){
     // runs ui, then exits
     int status = g_application_run (G_APPLICATION(app), argc, argv);
     g_object_unref (app);
+    close(sockfd);
 
     return status;
 }
