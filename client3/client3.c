@@ -14,10 +14,18 @@
 int sockfd;
 
 static void sendMessage (GtkWidget *widget, gpointer data){
-    GtkEntryBuffer *buffer = gtk_entry_get_buffer(data);
+    // converts the callback data to a useable format
+    GtkWidget *entry = gtk_entry_new();
+    entry = (GtkWidget*) data;
+
+    // gets text from the entry field 
+    GtkEntryBuffer *buffer = gtk_entry_get_buffer(GTK_ENTRY(entry));
     const char *text = gtk_entry_buffer_get_text(buffer);
 
-    write(sockfd, text, sizeof(text));
+    // sends the message to the server
+    ssize_t n = send(sockfd, text, sizeof(text), 0);
+    printf("Size Sent: %d\n", n);
+    printf("Message: %s\n", text);
 }
 
 static void activate (GtkApplication *app, gpointer user_data) {

@@ -9,36 +9,38 @@
 
 #define PORT 8080
 #define SA struct sockaddr
-#define MAX 80
+#define MAX_SIZE 80
 
-FILE* fp;
-
-int func(int connfd){
+int func(int connfd, FILE* fp){
     
-    char buffer[MAX];
-    int n;
+    char buffer[MAX_SIZE];
 	int test;
 
     while (1) {
-        bzero(buffer, MAX);
-
+		// clears the buffer and reads from socket again
+        bzero(buffer, MAX_SIZE);
         ssize_t num = recv(connfd, buffer, sizeof(buffer), 0);
-		if (num != 0){
-			printf("%d\n",num);
-		}
-			printf("received message %s", buffer);
+
+		// if buffer isn't empty or an error occurred
+		if (num != 0 && num != -1){
+			printf("Message Size: %d\n",num);
+			printf("Received Message: %s\n", buffer);
+			
 			if (strncmp(buffer, "exit", 4) == 0){
 				fclose(fp);
 				return 0;
 			}
+			
+			// write message to file
         	fprintf(fp, "%s\n", buffer);
+		}
     }
 }
 
 
 int main(){
 
-    fp = fopen("test.txt", "a+");
+    FILE* fp = fopen("test.txt", "a+");
 
     int sockfd, connfd, len;
     struct sockaddr_in servaddr, cli;
@@ -82,7 +84,7 @@ int main(){
 		printf("server accept the client...\n");
 
 	// Function for chatting between client and server
-	func(connfd);
+	func(connfd, fp);
 
 	// After chatting close the socket
 	close(sockfd);
