@@ -11,6 +11,8 @@
 #define SA struct sockaddr
 #define MAX_SIZE 80
 
+void listener(int sockfd, unsigned int len, struct sockaddr_in cli);
+
 int port;
 
 int func(int connfd){
@@ -40,7 +42,8 @@ int func(int connfd){
 
 int createSocket(){
 	
-	int sockfd, connfd, len;
+	int sockfd, connfd;
+	unsigned int len;
 	struct sockaddr_in servaddr, cli;
 	
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -88,10 +91,10 @@ int createSocket(){
 }
 
 void listenerSocketCreate() {
-	int sockfd, len;
+	int sockfd;
+	unsigned int len;
 	struct sockaddr_in servaddr, cli;
 
-	port = PORT;
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -113,47 +116,54 @@ void listenerSocketCreate() {
 	else
 		printf("Socket successfully binded..\n");
 
-    // Now server is ready to listen and verification
-	if ((listen(sockfd, 5)) != 0) {
-		printf("Listen failed...\n");
-		exit(0);
-	}
-	else
-		printf("Server listening..\n");
-	len = sizeof(cli);
-
 	listener(sockfd, len, cli);
 }
 
-void listener(int sockfd, int len, struct sockaddr_in cli){
+void listener(int sockfd, unsigned int len, struct sockaddr_in cli){
 
-	char sport[5];
-	int connfd;
-	// Accept the data packet from client and verification
-	connfd = accept(sockfd, (SA*)&cli, &len);
-	if (connfd < 0) {
-		printf("server accept failed...\n");
-		exit(0);
+	for ( ;; ) {
+		char sport[5];
+		int connfd;
+		
+		// Now server is ready to listen and verification
+		if ((listen(sockfd, 5)) != 0) {
+			printf("Listen failed...\n");
+			exit(0);
+		}
+		else
+			printf("Server listening..\n");
+		len = sizeof(cli);
+		
+		// Accept the data packet from client and verification
+		connfd = accept(sockfd, (SA*)&cli, &len);
+		if (connfd < 0) {
+			printf("server accept failed...\n");
+			exit(0);
+		}
+		else
+			printf("server accept the client...\n");
+
+		sprintf(sport, "%d", ++port);
+
+		if (fork() == 0){
+			createSocket();
+			return;
+		}
+
+		sleep(1);
+
+		send(connfd, sport, strlen(sport), 0);
+		//close(sockfd);
+		sleep(5);
 	}
-	else
-		printf("server accept the client...\n");
 
-	sprintf(sport, "%d", ++port);
 
-	if (fork() == 0){
-		createSocket();
-		return 0;
-	}
-
-	sleep(1);
-
-	send(connfd, sport, strlen(sport), 0);
-	fclose(sockfd);
-	listenerSocketCreate();
 
 }
 
 int main(){
+
+	port = PORT;
 
 	listenerSocketCreate();
 
