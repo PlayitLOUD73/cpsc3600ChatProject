@@ -15,9 +15,50 @@ void listener(int sockfd, unsigned int len, struct sockaddr_in cli);
 
 int port;
 
+
+// sends file, could be modified to also send 1 line updates
+void sendMessages(int connfd){
+	FILE* fp = fopen("test.txt", "r");
+
+
+	char ch;
+	int numchar = 0;
+	char numString[5];
+
+	// find out how many characters in file
+	while((ch=fgetc(fp)) != EOF) {
+		numchar++;
+	}
+
+	char str[numchar];
+
+	sprintf(numString, "%d", numchar);
+
+	// send num of characters to client
+	send(connfd, numString, 5, 0);
+
+	fclose(fp);
+	
+	fp = fopen("test.txt", "r");
+	
+	// copies file into a string
+	for (int i = 0; i < numchar; i++){
+		str[i] = fgetc(fp);
+	}
+
+	// sends file in one operation
+	send(connfd, str, strlen(str), 0);
+
+	fclose(fp);
+
+}
+
+// main operations of receiving from client
 int func(int connfd){
     
     char buffer[MAX_SIZE];
+
+	sendMessages(connfd);
 
     while (1) {
 		// clears the buffer and reads from socket again
@@ -145,6 +186,7 @@ void listener(int sockfd, unsigned int len, struct sockaddr_in cli){
 
 		sprintf(sport, "%d", ++port);
 
+		// child process creates a new socket for the user
 		if (fork() == 0){
 			createSocket();
 			return;

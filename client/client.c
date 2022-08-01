@@ -54,8 +54,35 @@ static void activate (GtkApplication *app, gpointer user_data) {
     g_signal_connect (button, "clicked", G_CALLBACK (sendMessage), entry);
 
     gtk_widget_show (GTK_WIDGET (window));
+
     g_object_unref (builder);
 }
+
+
+// loads the file sent from the server (could be modified to append to the end and only be 1 line as well)
+void loadMessages(int sockfd){
+
+
+    FILE* fp = fopen("messages.txt", "w");
+    char hold[5];
+
+    // get the length of the file
+    recv(sockfd, hold, 5 * sizeof(char), 0);
+    
+    int numchar = atoi(hold);
+
+    // create proper length of buffer
+    char buffer[numchar];
+    bzero(buffer, numchar);
+
+    // get the file in one operation
+    recv(sockfd, buffer, sizeof(buffer), 0);
+    fprintf(fp, "%s", buffer);
+
+    fclose(fp);
+
+}
+
 
 int createSocket(int portNum){
     int sockfd, connfd;
@@ -108,6 +135,8 @@ int main (int argc, char *argv[]){
     #endif
     // connects socket to server
     sockfd = createSocket(PORT);
+
+    loadMessages(sockfd); 
 
     // sets up data for ui
     GtkApplication *app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
