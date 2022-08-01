@@ -6,18 +6,41 @@
             <object id="grid" class="GtkGrid">
                 <child>
                     <object id="text" class="GtkEntry">
+                        <property name="max-width-chars">50</property>
                         <attributes>
                             <attribute name="weight" value="PANGO_WEIGHT_BOLD"/>
-                        </attributes>
+                        </attributes>            
+                        <layout>
+                            <property name="column">0</property>
+                            <property name="row">1</property>
+                        </layout>
                     </object>
                 </child>
                 <child>
                     <object id="button1" class="GtkButton"> 
                         <property name="label">Send</property>
+                        <layout>
+                            <property name="column">1</property>
+                            <property name="row">1</property>
+                        </layout>
+                    </object>
+                </child>
+                <child>
+                    <object id="view" class="GtkTextView">
+                        <property name="editable">False</property>
+                        <property name="right-margin">10</property>
+                        <property name="left-margin">10</property>
+                        <property name="top-margin">10</property>
+                        <property name="bottom-margin">10</property>
+                        <property name="wrap-mode">GTK_WRAP_WORD</property>
+                        <layout>
+                            <property name="column">0</property>
+                            <property name="row">0</property>
+                            <property name="column-span">1</property>
+                        </layout>
                     </object>
                 </child>
             </object>
-
         </child>
     </object>
 </interface>
