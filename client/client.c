@@ -37,14 +37,24 @@ static void activate (GtkApplication *app, gpointer user_data) {
     /* Connect signal handlers to the constructed widgets. */
     GObject *window = gtk_builder_get_object (builder, "window");
     gtk_window_set_application (GTK_WINDOW (window), app);
-    
+
+    // initializes a text buffer object to go into the viewer
+    GtkTextBuffer* buff = gtk_text_buffer_new(gtk_text_tag_table_new());
+    char* testMessage = "aaaaaaaaaafsadfasdfasdfasdfasdfasdfalksjdouifnjeaaaa\nlol";
+    gtk_text_buffer_set_text(buff, testMessage, strlen(testMessage));
+
+    // sets the text that goes into the viewer
+    GObject *view = gtk_builder_get_object(builder, "view");
+    gtk_text_view_set_buffer(GTK_TEXT_VIEW(view), buff);
+
     GObject *entry = gtk_builder_get_object(builder, "text");
 
+    // attaches the send message function to the button click
     GObject *button = gtk_builder_get_object (builder, "button1");
     g_signal_connect (button, "clicked", G_CALLBACK (sendMessage), entry);
 
     gtk_widget_show (GTK_WIDGET (window));
-     
+
     g_object_unref (builder);
 }
 
@@ -91,8 +101,9 @@ int createSocket(int portNum){
    
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
-    //servaddr.sin_addr.s_addr = inet_addr("159.223.187.217");
+    // servaddr.sin_addr.s_addr = inet_addr("159.223.187.217");
     servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+
     servaddr.sin_port = htons(portNum);
    
     // connect the client socket to server socket
