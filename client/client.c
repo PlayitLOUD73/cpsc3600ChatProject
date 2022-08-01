@@ -25,8 +25,13 @@ static void sendMessage (GtkWidget *widget, gpointer data){
 
     // sends the message to the server
     ssize_t n = send(sockfd, text, strlen(text), 0);
-    printf("Size Sent: %d\n", n);
-    printf("Message: %s\n", text);
+}
+
+static void recieveMessage(GtkWidget *widget, gpointer data){
+    GtkTextBuffer *buff = gtk_text_buffer_new(gtk_text_tag_table_new());
+    ssize_t message = recv(sockfd, buff, sizeof(*buff), 0);
+    if(message != 0 && message != -1)
+        gtk_text_view_set_buffer(GTK_TEXT_VIEW(widget), buff);
 }
 
 static void activate (GtkApplication *app, gpointer user_data) {
@@ -40,11 +45,12 @@ static void activate (GtkApplication *app, gpointer user_data) {
 
     // initializes a text buffer object to go into the viewer
     GtkTextBuffer* buff = gtk_text_buffer_new(gtk_text_tag_table_new());
-    char* testMessage = "aaaaaaaaaafsadfasdfasdfasdfasdfasdfalksjdouifnjeaaaa\nlol";
+    char* testMessage = "placeholder";
     gtk_text_buffer_set_text(buff, testMessage, strlen(testMessage));
 
     // sets the text that goes into the viewer
     GObject *view = gtk_builder_get_object(builder, "view");
+    g_signal_connect(view, "move-focus", G_CALLBACK(recieveMessage), NULL);
     gtk_text_view_set_buffer(GTK_TEXT_VIEW(view), buff);
 
     GObject *entry = gtk_builder_get_object(builder, "text");
@@ -60,28 +66,28 @@ static void activate (GtkApplication *app, gpointer user_data) {
 
 
 // loads the file sent from the server (could be modified to append to the end and only be 1 line as well)
-void loadMessages(int sockfd){
+// void loadMessages(int sockfd){
 
 
-    FILE* fp = fopen("messages.txt", "w");
-    char hold[5];
+//     FILE* fp = fopen("messages.txt", "w");
+//     char hold[5];
 
-    // get the length of the file
-    recv(sockfd, hold, 5 * sizeof(char), 0);
+//     // get the length of the file
+//     recv(sockfd, hold, 5 * sizeof(char), 0);
     
-    int numchar = atoi(hold);
+//     int numchar = atoi(hold);
 
-    // create proper length of buffer
-    char buffer[numchar];
-    bzero(buffer, numchar);
+//     // create proper length of buffer
+//     char buffer[numchar];
+//     bzero(buffer, numchar);
 
-    // get the file in one operation
-    recv(sockfd, buffer, sizeof(buffer), 0);
-    fprintf(fp, "%s", buffer);
+//     // get the file in one operation
+//     recv(sockfd, buffer, sizeof(buffer), 0);
+//     fprintf(fp, "%s", buffer);
 
-    fclose(fp);
+//     fclose(fp);
 
-}
+// }
 
 
 int createSocket(int portNum){
@@ -136,7 +142,7 @@ int main (int argc, char *argv[]){
     // connects socket to server
     sockfd = createSocket(PORT);
 
-    loadMessages(sockfd); 
+    // loadMessages(sockfd); 
 
     // sets up data for ui
     GtkApplication *app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
