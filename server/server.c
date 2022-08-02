@@ -14,11 +14,11 @@
 
 void listener(int sockfd, unsigned int len, struct sockaddr_in cli);
 
+// the array of sockets used
 int* connections;
 int numConnections = 0;
 
 int port;
-
 
 // sends file, could be modified to also send 1 line updates
 // void sendMessages(int connfd){
@@ -62,8 +62,6 @@ void *func(void* socket){
     int connfd = *((int*) socket);
     char buffer[MAX_SIZE];
 
-	//sendMessages(connfd);
-
     while (1) {
 		// clears the buffer and reads from socket again
         bzero(buffer, MAX_SIZE);
@@ -85,13 +83,13 @@ void *func(void* socket){
         	fprintf(fp, "%s\n", buffer);
 			fclose(fp);
 
+			// sends the message received to all connected clients
 			ssize_t sent;
 			for(int i = 0; i < numConnections; i++){
 				if(connections[i] != connfd && connections[i] == 0){
 					sent = send(connections[i], buffer, strlen(buffer), 0);
-					if(sent == 0 || sent == -1){
+					if(sent == 0 || sent == -1)
 						printf("Failed to send message to port %d\n", connections[i]);
-					}
 					else
 						printf("Sent Message: %s\n", buffer);
 				}
@@ -106,8 +104,8 @@ int createSocket(){
 	unsigned int len;
 	struct sockaddr_in servaddr, cli;
 	
+	// creates initial socket
 	sockfd = socket(AF_INET, SOCK_STREAM, 0);
-
     if (sockfd == -1) {
         printf("socket creation failed...\n");
     } else {
@@ -134,8 +132,8 @@ int createSocket(){
 	else
 		printf("Server listening..\n");
 
+	// accepts a new connection
 	len = sizeof(cli);
-
 	*connfd = accept(sockfd, (SA*)&cli, &len);
 	if (*connfd < 0) {
 		printf("Server accept failed...\n");
@@ -144,6 +142,8 @@ int createSocket(){
 	else
 		printf("Server accepted the client...\n");
 
+	// hands the new connection off to a thread
+	// client reconnects to the new port/socket
 	connections[numConnections++] = *connfd;
 	pthread_t thread_id;
 	pthread_create(&thread_id, NULL, func, connfd);
@@ -151,11 +151,11 @@ int createSocket(){
 	return *connfd;
 }
 
+// creates the initial socket
 void listenerSocketCreate() {
 	int sockfd;
 	unsigned int len;
 	struct sockaddr_in servaddr, cli;
-
 
     sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -180,6 +180,7 @@ void listenerSocketCreate() {
 	listener(sockfd, len, cli);
 }
 
+// stays running on the main thread and handles any new connections to the server
 void listener(int sockfd, unsigned int len, struct sockaddr_in cli){
 
 	for ( ;; ) {
@@ -214,18 +215,11 @@ void listener(int sockfd, unsigned int len, struct sockaddr_in cli){
 	}
 }
 
-int main(){
-
+int main(void){
 	port = PORT;
 	connections = malloc(sizeof(int) * 100);
 
 	listenerSocketCreate();
-
-
-	// Function for chatting between client and server
-	//func(connfd);
-
-	// After chatting close the socket
 
 	return 0;
 }

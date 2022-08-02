@@ -13,12 +13,14 @@
 #define MAX_SIZE 80
 #define SA struct sockaddr
 
+// global variables for socket and thread id
 int sockfd;
 pthread_t thread_id;
 
+// char username[15];
+
 static void sendMessage (GtkWidget *widget, gpointer data){
     // converts the callback data to a useable format
-    // from: https://stackoverflow.com/questions/3225302/get-text-from-a-gtkentry 
     GtkWidget *entry = gtk_entry_new();
     entry = (GtkWidget*) data;
 
@@ -27,15 +29,22 @@ static void sendMessage (GtkWidget *widget, gpointer data){
     const char *text = gtk_entry_buffer_get_text(buffer);
 
     // sends the message to the server
-    ssize_t n = send(sockfd, text, strlen(text), 0);
+    // char* message = strcat(username, text);
+    int size = strlen(text /*message*/);
+    if(size > 0){
+        ssize_t n = send(sockfd, text /*message*/, size, 0);
+        if(n == -1){
+            printf("Failed to send message: %s\n", text /*message*/);
+            exit(1);
+        }
+    }
 }
 
 static void *receiveMessage(void *widget){
     GtkWidget *view = (GtkWidget*) widget;
     char buffer[MAX_SIZE];
-    //char* text = malloc(sizeof(char) * 10000); 
 
-    // waits for new messages and updates screen
+    // waits for new messages and updates screen when a message is read
     while(1){
         bzero(buffer, MAX_SIZE);
         ssize_t messageSize = recv(sockfd, buffer, MAX_SIZE, 0);
@@ -53,17 +62,17 @@ static void activate (GtkApplication *app, gpointer user_data) {
     GtkBuilder *builder = gtk_builder_new ();
     gtk_builder_add_from_file (builder, "builder.ui", NULL);
 
-    /* Connect signal handlers to the constructed widgets. */
+    // Connect signal handlers to the constructed widgets
     GObject *window = gtk_builder_get_object (builder, "window");
     gtk_window_set_application (GTK_WINDOW (window), app);
 
-    // sets the text that goes into the viewer
     GObject *view = gtk_builder_get_object(builder, "view");
+
+    // creates a thread to get messages and update the view 
     pthread_create(&thread_id, NULL, receiveMessage, (void*)GTK_TEXT_VIEW(view));
 
     GObject *entry = gtk_builder_get_object(builder, "text");
 
-    // attaches the send message function to the button click
     GObject *button = gtk_builder_get_object (builder, "button1");
     g_signal_connect (button, "clicked", G_CALLBACK (sendMessage), entry);
 
@@ -73,7 +82,7 @@ static void activate (GtkApplication *app, gpointer user_data) {
 }
 
 
-// loads the file sent from the server (could be modified to append to the end and only be 1 line as well)
+// loads the entire message history file sent from the server 
 // void loadMessages(int sockfd){
 //
 //
@@ -147,6 +156,20 @@ int main (int argc, char *argv[]){
     #ifdef GTK_SRCDIR
         g_chdir (GTK_SRCDIR);
     #endif
+    
+    // adds ability for custom username
+    // if(argc == 2){
+    //     if(strlen(argv[1]) > 10){
+    //         printf("Enter a username less than 10 characters\n");
+    //         exit(0);
+    //     }
+    //     sprintf(username, "[%s]: ", argv[1]);
+    // }
+    // else{
+    //     printf("Please enter a username\n");
+    //     exit(0);
+    // }
+
     // connects socket to server
     sockfd = createSocket(PORT);
 
@@ -154,11 +177,12 @@ int main (int argc, char *argv[]){
     GtkApplication *app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
     g_signal_connect (app, "activate", G_CALLBACK(activate), NULL);
 
-    // runs ui, then exits
+    // starts the ui
     int status = g_application_run (G_APPLICATION(app), argc, argv);
-    g_object_unref (app);
 
+    // closes out everything nicely
+    g_object_unref (app);
     close(sockfd);
-    pthread_join(thread_id, NULL);
+    pthread_cancel(thread_id);
     return status;
 }
