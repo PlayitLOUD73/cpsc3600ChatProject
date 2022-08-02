@@ -6,12 +6,15 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include <pthread.h>
 
 
 #define PORT 8080
+#define MAX_SIZE 80
 #define SA struct sockaddr
 
 int sockfd;
+pthread_t thread_id;
 
 static void sendMessage (GtkWidget *widget, gpointer data){
     // converts the callback data to a useable format
@@ -27,11 +30,22 @@ static void sendMessage (GtkWidget *widget, gpointer data){
     ssize_t n = send(sockfd, text, strlen(text), 0);
 }
 
-static void recieveMessage(GtkWidget *widget, gpointer data){
-    GtkTextBuffer *buff = gtk_text_buffer_new(gtk_text_tag_table_new());
-    ssize_t message = recv(sockfd, buff, sizeof(*buff), 0);
-    if(message != 0 && message != -1)
-        gtk_text_view_set_buffer(GTK_TEXT_VIEW(widget), buff);
+static void *receiveMessage(void *widget){
+    GtkWidget *view = (GtkWidget*) widget;
+    char buffer[MAX_SIZE];
+    //char* text = malloc(sizeof(char) * 10000); 
+
+    // waits for new messages and updates screen
+    while(1){
+        bzero(buffer, MAX_SIZE);
+        ssize_t messageSize = recv(sockfd, buffer, MAX_SIZE, 0);
+        if(messageSize != 0 && messageSize != -1){
+            //strcat(text, buffer);
+            GtkTextBuffer* gtkBuff = gtk_text_buffer_new(gtk_text_tag_table_new());
+            gtk_text_buffer_set_text(gtkBuff, buffer/*text*/, strlen(buffer));
+            gtk_text_view_set_buffer(GTK_TEXT_VIEW(view), gtkBuff);
+        }
+    }
 }
 
 static void activate (GtkApplication *app, gpointer user_data) {
@@ -43,15 +57,9 @@ static void activate (GtkApplication *app, gpointer user_data) {
     GObject *window = gtk_builder_get_object (builder, "window");
     gtk_window_set_application (GTK_WINDOW (window), app);
 
-    // initializes a text buffer object to go into the viewer
-    GtkTextBuffer* buff = gtk_text_buffer_new(gtk_text_tag_table_new());
-    char* testMessage = "placeholder";
-    gtk_text_buffer_set_text(buff, testMessage, strlen(testMessage));
-
     // sets the text that goes into the viewer
     GObject *view = gtk_builder_get_object(builder, "view");
-    g_signal_connect(view, "move-focus", G_CALLBACK(recieveMessage), NULL);
-    gtk_text_view_set_buffer(GTK_TEXT_VIEW(view), buff);
+    pthread_create(&thread_id, NULL, receiveMessage, (void*)GTK_TEXT_VIEW(view));
 
     GObject *entry = gtk_builder_get_object(builder, "text");
 
@@ -67,26 +75,26 @@ static void activate (GtkApplication *app, gpointer user_data) {
 
 // loads the file sent from the server (could be modified to append to the end and only be 1 line as well)
 // void loadMessages(int sockfd){
-
-
+//
+//
 //     FILE* fp = fopen("messages.txt", "w");
 //     char hold[5];
-
+//
 //     // get the length of the file
 //     recv(sockfd, hold, 5 * sizeof(char), 0);
-    
+    //
 //     int numchar = atoi(hold);
-
+//
 //     // create proper length of buffer
 //     char buffer[numchar];
 //     bzero(buffer, numchar);
-
+//
 //     // get the file in one operation
 //     recv(sockfd, buffer, sizeof(buffer), 0);
 //     fprintf(fp, "%s", buffer);
-
+//
 //     fclose(fp);
-
+//
 // }
 
 
@@ -107,8 +115,8 @@ int createSocket(int portNum){
    
     // assign IP, PORT
     servaddr.sin_family = AF_INET;
-    // servaddr.sin_addr.s_addr = inet_addr("159.223.187.217");
-    servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
+    servaddr.sin_addr.s_addr = inet_addr("159.223.187.217");
+    // servaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
 
     servaddr.sin_port = htons(portNum);
    
@@ -142,8 +150,6 @@ int main (int argc, char *argv[]){
     // connects socket to server
     sockfd = createSocket(PORT);
 
-    // loadMessages(sockfd); 
-
     // sets up data for ui
     GtkApplication *app = gtk_application_new ("org.gtk.example", G_APPLICATION_FLAGS_NONE);
     g_signal_connect (app, "activate", G_CALLBACK(activate), NULL);
@@ -151,7 +157,8 @@ int main (int argc, char *argv[]){
     // runs ui, then exits
     int status = g_application_run (G_APPLICATION(app), argc, argv);
     g_object_unref (app);
-    close(sockfd);
 
+    close(sockfd);
+    pthread_join(thread_id, NULL);
     return status;
 }

@@ -71,11 +71,12 @@ void *func(void* socket){
 
 		// if buffer isn't empty or an error occurred
 		if (num != 0 && num != -1){
-   			// printf("Size Received: %ld\n", num);
-    		// printf("Message Recieved: %s\n", buffer);
+   			printf("Size Received: %ld\n", num);
+    		printf("Message Recieved: %s\n", buffer);
 			
 			if (strncmp(buffer, "exit", 4) == 0){
 				// clear out the entry in the connections array?
+				// socket is just a placeholder
 				return socket;
 			}
 			
@@ -86,7 +87,7 @@ void *func(void* socket){
 
 			ssize_t sent;
 			for(int i = 0; i < numConnections; i++){
-				if(connections[i] != connfd){
+				if(connections[i] != connfd && connections[i] == 0){
 					sent = send(connections[i], buffer, strlen(buffer), 0);
 					if(sent == 0 || sent == -1){
 						printf("Failed to send message to port %d\n", connections[i]);
