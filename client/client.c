@@ -17,8 +17,6 @@
 int sockfd;
 pthread_t thread_id;
 
-// char username[15];
-
 static void sendMessage (GtkWidget *widget, gpointer data){
     // converts the callback data to a useable format
     GtkWidget *entry = gtk_entry_new();
@@ -29,7 +27,6 @@ static void sendMessage (GtkWidget *widget, gpointer data){
     const char *text = gtk_entry_buffer_get_text(buffer);
 
     // sends the message to the server
-    // char* message = strcat(username, text);
     int size = strlen(text /*message*/);
     if(size > 0){
         ssize_t n = send(sockfd, text /*message*/, size, 0);
@@ -81,32 +78,6 @@ static void activate (GtkApplication *app, gpointer user_data) {
     g_object_unref (builder);
 }
 
-
-// loads the entire message history file sent from the server 
-// void loadMessages(int sockfd){
-//
-//
-//     FILE* fp = fopen("messages.txt", "w");
-//     char hold[5];
-//
-//     // get the length of the file
-//     recv(sockfd, hold, 5 * sizeof(char), 0);
-    //
-//     int numchar = atoi(hold);
-//
-//     // create proper length of buffer
-//     char buffer[numchar];
-//     bzero(buffer, numchar);
-//
-//     // get the file in one operation
-//     recv(sockfd, buffer, sizeof(buffer), 0);
-//     fprintf(fp, "%s", buffer);
-//
-//     fclose(fp);
-//
-// }
-
-
 int createSocket(int portNum){
     int sockfd, connfd;
     struct sockaddr_in servaddr, cli;
@@ -156,19 +127,6 @@ int main (int argc, char *argv[]){
     #ifdef GTK_SRCDIR
         g_chdir (GTK_SRCDIR);
     #endif
-    
-    // adds ability for custom username
-    // if(argc == 2){
-    //     if(strlen(argv[1]) > 10){
-    //         printf("Enter a username less than 10 characters\n");
-    //         exit(0);
-    //     }
-    //     sprintf(username, "[%s]: ", argv[1]);
-    // }
-    // else{
-    //     printf("Please enter a username\n");
-    //     exit(0);
-    // }
 
     // connects socket to server
     sockfd = createSocket(PORT);
